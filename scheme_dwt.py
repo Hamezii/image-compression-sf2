@@ -54,6 +54,9 @@ def draw_matrix(X, save_and_format = None):
         
 def draw_matrices(imgs, titles, save_and_format = None):
     fig, axs = plt.subplots(1, len(imgs), figsize=(12, 3))
+    if len(imgs) == 1:
+        axs = [axs, ]
+
     for ax, img, title in zip(axs, imgs, titles):
         plot_image(img, ax=ax)
         ax.set(yticks=[], title=f'{title}')
@@ -280,6 +283,11 @@ def jpegenc_dwt(X: np.ndarray, qstep: float, N: int = 4,
 
     # Grouping
     Yq = dwtgroup(Yq, N)
+    # Yq = regroup(Yq, M)
+    # M = 256 // M
+
+    # draw_matrices([Yq,], ["Yq'",], "no_regroup.svg")
+    # draw_matrices([Yq,], ["Yq",], "dwt_regroup_bits=47,251.svg")
 
     # Generate zig-zag scan of AC coefs.
     scan = diagscan(M)
@@ -390,6 +398,7 @@ def jpegdec_dwt(vlc: np.ndarray, qstep: float, N: int = 4,
     opthuff = (hufftab is not None)
 
     M = 2 ** N
+    # M = 256 // M    ## TODO 
 
     # Set up standard scan sequence
     scan = diagscan(M)
@@ -482,7 +491,12 @@ def jpegdec_dwt(vlc: np.ndarray, qstep: float, N: int = 4,
         print('Inverse quantising to step size of {}'.format(qstep))
 
     # Undo grouping
-    Zi = dwtgroup(Zq, -N)
+    Zi = Zq
+    #M = 256 // M
+    # Zi = regroup(Zi, M)
+    Zi = dwtgroup(Zi, -N)
+    
+    
 
     # Undo quant
     Zi = quant2(Zi, qstep, qstep)
@@ -521,8 +535,8 @@ def dwt_analysis(X, equal_mse=True):
     draw_matrix(Xq)
 
 def dwt_huff_analysis(X):
-    N = 2
-    quant = 10
+    N = 4
+    quant = 11
     vlc, hufftab = jpegenc_dwt(X, quant, N, opthuff=True)
     Z = jpegdec_dwt(vlc, quant, N, hufftab=hufftab)
     draw_matrix(Z)
